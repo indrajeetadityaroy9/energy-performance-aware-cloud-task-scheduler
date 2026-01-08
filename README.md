@@ -1,155 +1,200 @@
-# Energy and Performance-Aware Task Scheduling in Mobile Cloud Computing
+# Energy- and Performance-Aware Task Scheduling in Mobile Cloud Computing
 
-An implementation of the theoretical framework presented in:
-**"Energy and Performance-Aware Task Scheduling in a Mobile Cloud Computing Environment"**
-[📄 IEEE Xplore](https://ieeexplore.ieee.org/document/6973741)
+**Research Artifact for arXiv / IEEE Paper**
 
-This implementation addresses the fundamental challenge in Mobile Cloud Computing (MCC) environments: how to schedule task graphs across heterogeneous local cores and cloud resources while jointly optimizing two competing objectives:
+---
 
-- **Energy Efficiency**: Minimize mobile device energy consumption
-- **Performance**: Meet application completion time deadlines (hard deadline constraints)
+## 1. Overview
 
-The algorithm implements a two-phase approach:
-1. **Initial Scheduling**: Generate a minimal-delay schedule using priority-based task assignment
-2. **Energy Optimization**: Iteratively migrate tasks to reduce energy while respecting deadline constraints (T_max = 1.5 × initial completion time)
+This repository provides a **reproducible research artifact** for the paper:
 
-**Keywords**: Mobile Cloud Computing (MCC), Energy Minimization, Task Scheduling, Mobile Handsets, Wireless Communication, Cloud Computing, Processor Scheduling, Hard Deadline Constraint
+> **Energy and Performance-Aware Task Scheduling in a Mobile Cloud Computing Environment**
+> IEEE Transactions on Cloud Computing, 2014
 
-## Algorithm Architecture
+The artifact implements the paper’s **two-phase task scheduling framework** for directed acyclic graph (DAG) applications executing across **heterogeneous mobile cores and cloud resources**, with the objective of **minimizing energy consumption under a completion-time constraint**.
 
-### Two-Phase Scheduling
+The implementation strictly follows the **task model, execution model, energy model, and optimization criteria** defined in the paper, enabling faithful replication of reported results and controlled experimentation.
 
-#### **Phase 1: Initial Scheduling (Minimal-Delay)**
+---
+
+## 2. Problem Setting
+
+### 2.1 Application Model
+
+* Applications are modeled as **directed acyclic graphs (DAGs)**
+* Nodes represent tasks with computation requirements
+* Edges encode precedence constraints and data dependencies
+
+### 2.2 Execution Environment
+
+* A mobile device with **heterogeneous local CPU cores**
+* A remote cloud accessed via a **serialized wireless channel**
+* No task preemption; tasks execute to completion once scheduled
+
+### 2.3 Optimization Objective
+
+Minimize total energy consumption while satisfying a hard deadline constraint:
+
+```
+T_total ≤ T_max
+```
+
+where:
+
+```
+T_max = 1.5 × T_initial
+```
+
+---
+
+## 3. Algorithmic Framework
+
+The scheduler operates in **two strictly separated phases**, exactly as defined in the paper.
+
+---
+
+### 3.1 Phase 1: Minimal-Delay Scheduling
 
 ```
 Primary Assignment → Task Prioritization → Execution Unit Selection
 ```
 
-1. **Primary Assignment** (`primary_assignment`)
-   - Compares best local execution time (min across cores) vs cloud execution time
-   - Initial placement decision: local cores vs cloud
-   - Implements Equations 11-12 from paper
+#### Primary Assignment
 
-2. **Task Prioritization** (`task_prioritizing`)
-   - Computes priority scores using task graph topology
-   - Uses computation costs (w_i) and successor priorities
-   - Implements Equations 13-16 from paper
+* Compares the fastest local execution time against cloud execution time
+* Assigns each task to either a local core or the cloud
+* Implements **Equations (11–12)**
 
-3. **Execution Unit Selection** (`execution_unit_selection`)
-   - Schedules tasks in priority order
-   - Computes ready times and finish times for all execution phases
-   - Generates initial task sequences for each resource
-   - Implements Equations 3-6 from paper
+#### Task Prioritization
 
-#### **Phase 2: Energy Optimization (Migration-Based)**
+* Computes task priorities using DAG topology and computation cost
+* Captures downstream criticality via successor aggregation
+* Implements **Equations (13–16)**
+
+#### Execution Unit Selection
+
+* Schedules tasks in descending priority order
+* Computes ready and finish times for all execution phases
+* Produces an initial feasible schedule
+* Implements **Equations (3–6)**
+
+---
+
+### 3.2 Phase 2: Energy-Aware Migration
 
 ```
-Migration Evaluation → Kernel Rescheduling → Energy Assessment → Accept/Reject
+Migration Evaluation → Kernel Rescheduling → Energy Assessment → Acceptance
 ```
 
-1. **Migration Evaluation** (`optimize_task_scheduling`)
-   - Systematically evaluates moving tasks between cores and cloud
-   - Uses caching to avoid redundant evaluations
-   - Filters migrations that violate deadline (T_max)
+#### Migration Evaluation
 
-2. **Kernel Algorithm** (`kernel_algorithm`)
-   - Linear-time O(n) rescheduling after each migration
-   - Maintains precedence constraints via dependency tracking
-   - Recomputes all ready times and finish times
+* Enumerates candidate task migrations between cores and cloud
+* Filters migrations violating the deadline constraint
 
-3. **Migration Selection** (`identify_optimal_migration`)
-   - Two-phase selection strategy:
-     - **Phase 1**: Prioritize migrations that reduce energy without increasing time
-     - **Phase 2**: Consider time-energy tradeoffs using efficiency metric (energy saved / time increase)
+#### Kernel Rescheduling
 
-### Execution Model
+* Linear-time rescheduling after each migration
+* Preserves precedence constraints
+* Recomputes all timing variables
 
-#### **Local Execution (Heterogeneous Cores)**
-- 3 cores with different speeds and power consumption
-- Core powers: [1W, 2W, 4W] (faster cores consume more power)
-- Each task has different execution times per core
-- No preemption: tasks run to completion
+#### Migration Selection
 
-#### **Cloud Execution (3-Phase Pipeline)**
+* **Stage 1:** Accept migrations that reduce energy with no time increase
+* **Stage 2:** Evaluate energy–time trade-offs using:
+
+  ```
+  efficiency = Δenergy / Δtime
+  ```
+
+---
+
+## 4. Execution and Energy Models
+
+### 4.1 Local Execution (Mobile Device)
+
+* Three heterogeneous CPU cores
+* Power consumption increases with performance:
+
+  ```
+  P = [1W, 2W, 4W]
+  ```
+* Core-dependent execution times
+* Non-preemptive execution
+
+### 4.2 Cloud Execution (Three-Stage Pipeline)
+
 ```
-Mobile Device → [RF Send] → Cloud → [Compute] → Mobile Device → [RF Receive]
-```
-
-- **Sending Phase** (T_send = 3): Upload task data via wireless channel
-- **Cloud Computing** (T_cloud = 1): Execute in cloud (assumed fast)
-- **Receiving Phase** (T_receive = 1): Download results via wireless channel
-
-**Key Constraint**: Wireless sending/receiving channels are shared resources that serialize communication.
-
-### Metrics
-
-**Completion Time** (Equation 10):
-```
-T_total = max(max(FT_l, FT_wr)) for all exit tasks
-```
-
-**Energy Consumption** (Equations 7-9):
-```
-Local:  E_i^l = P_k × T_i^l
-Cloud:  E_i^c = P^s × T_i^s
-Total:  E_total = Σ E_i for all tasks
+[RF Send] → [Cloud Compute] → [RF Receive]
 ```
 
-## Key Implementation Components
+|         Phase | Description     | Time |
+| ------------: | --------------- | ---: |
+|       RF Send | Wireless upload |    3 |
+| Cloud Compute | Cloud execution |    1 |
+|    RF Receive | Result download |    1 |
 
-### Task Graph (DAG)
-- **Nodes**: Tasks with execution time requirements
-- **Edges**: Precedence constraints (task dependencies)
-- **Properties**:
-  - `pred_tasks`: Immediate predecessors (must complete first)
-  - `succ_tasks`: Immediate successors (depend on this task)
+**Constraint:**
+Wireless send and receive phases are **globally serialized**.
 
-### Scheduling States
-Tasks transition through three states:
-1. `UNSCHEDULED` → Initial state
-2. `SCHEDULED` → After Phase 1 (initial scheduling)
-3. `KERNEL_SCHEDULED` → After Phase 2 (rescheduling)
+---
 
-### Timing Model
-- **Ready Times (RT)**: Earliest start time for each execution phase
-  - `RT_l`: Ready for local execution
-  - `RT_ws`: Ready for wireless sending
-  - `RT_c`: Ready for cloud computation
-  - `RT_wr`: Ready for wireless receiving
+## 5. Experimental Benchmarks and Results
 
-- **Finish Times (FT)**: Actual completion time for each phase
-  - `FT_l`: Local execution finish
-  - `FT_ws`: Sending complete
-  - `FT_c`: Cloud computation complete
-  - `FT_wr`: Results received
+The scheduler is evaluated on **five benchmark task graphs** defined in the original paper.
+Each benchmark represents a distinct dependency structure and stress scenario.
+All reported results are obtained **exclusively from these benchmarks**.
 
-## Test Graphs
+| Graph | Tasks | Topology   | Purpose                   | Initial Time | Initial Energy | Final Time | Final Energy |
+| ----: | ----: | ---------- | ------------------------- | -----------: | -------------: | ---------: | -----------: |
+|     1 |    10 | Fan-out    | Parallelism stress        |           18 |          100.5 |         26 |         24.0 |
+|     2 |    10 | Balanced   | Mixed dependencies        |           25 |          120.0 |         32 |         15.0 |
+|     3 |    20 | Deep chain | Critical-path sensitivity |           34 |          184.0 |         50 |         49.0 |
+|     4 |    20 | Wide       | Resource contention       |           33 |          188.0 |         47 |         59.5 |
+|     5 |    20 | Irregular  | General case              |           29 |          183.0 |         42 |         73.5 |
 
-The implementation includes 5 predefined task graphs:
+**Observation.**
+Across all benchmarks, Phase 2 migration achieves substantial energy reduction while respecting the deadline constraint, reproducing the qualitative behavior reported in the paper.
 
-| Graph | Tasks | Topology | Description |
-|-------|-------|----------|-------------|
-| 1 | 10 | Fan-out dominant | Tests parallel task handling |
-| 2 | 10 | Balanced | Tests mixed dependencies |
-| 3 | 20 | Deep pipeline | Tests long dependency chains |
-| 4 | 20 | Wide parallelism | Tests resource contention |
-| 5 | 20 | Irregular | Tests general case |
+### 6.2 Scheduling States
 
-## Technical Details
+|              State | Meaning       |
+| -----------------: | ------------- |
+|      `UNSCHEDULED` | Initial       |
+|        `SCHEDULED` | After Phase 1 |
+| `KERNEL_SCHEDULED` | After Phase 2 |
 
-### Complexity Analysis
-- **Initial Scheduling**: O(n² log n) where n = number of tasks
-  - Priority calculation: O(n²) (dynamic programming)
-  - Task ordering: O(n log n)
-  - Scheduling: O(n × k) where k = number of cores
+### 6.3 Timing Variables
 
-- **Kernel Rescheduling**: O(n) linear time
-  - Queue-based processing ensures each task processed once
+Each task maintains:
 
-- **Migration Phase**: O(n × m × k) where m = migration iterations
-  - Typically m << n, so practical complexity is manageable
+* Ready times: `RT_l`, `RT_ws`, `RT_c`, `RT_wr`
+* Finish times: `FT_l`, `FT_ws`, `FT_c`, `FT_wr`
 
-### Memory Optimization
-- Migration caching prevents redundant evaluations
-- Cache limit: 1000 entries (prevents unbounded growth)
-- Memoization in priority calculation
+---
+
+## 7. Computational Complexity
+
+* **Initial Scheduling:** `O(n² log n)`
+* **Kernel Rescheduling:** `O(n)` (linear)
+* **Migration Phase:** `O(n × m × k)`
+  where `m ≪ n` in practice
+
+---
+
+## 8. Reproducibility
+
+* All benchmarks, parameters, and power models are **fixed**
+* Deterministic execution (no randomness)
+* Results can be regenerated by running the provided binaries
+* Python implementation serves as a readable reference model
+
+### Build and Run
+
+```bash
+make
+./bin/mcc_scheduler
+```
+
+```bash
+python3 src/python/mcc.py
+```

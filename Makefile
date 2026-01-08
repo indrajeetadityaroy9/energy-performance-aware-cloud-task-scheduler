@@ -1,19 +1,26 @@
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -Wpedantic -Wshadow -O2 -MMD -MP
-TARGET := mcc_scheduler
-SOURCES := mcc.cpp
-OBJECTS := $(SOURCES:.cpp=.o)
+SRC_DIR := src/cpp
+INC_DIR := include
+BUILD_DIR := build
+BIN_DIR := bin
+TARGET := $(BIN_DIR)/mcc_scheduler
+SOURCES := $(SRC_DIR)/mcc.cpp
+OBJECTS := $(BUILD_DIR)/mcc.o
 DEPS := $(OBJECTS:.o=.d)
 
 .PHONY: all clean run
 
 all: $(TARGET)
 
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) | $(BIN_DIR)
 	$(CXX) $(OBJECTS) -o $@
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -I$(INC_DIR) -c $< -o $@
+
+$(BIN_DIR) $(BUILD_DIR):
+	mkdir -p $@
 
 run: $(TARGET)
 	./$(TARGET)
