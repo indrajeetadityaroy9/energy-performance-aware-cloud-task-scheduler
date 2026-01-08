@@ -172,7 +172,7 @@ Each task maintains:
 
 ---
 
-## 7. Computational Complexity
+## 7. Complexity
 
 * **Initial Scheduling:** `O(n² log n)`
 * **Kernel Rescheduling:** `O(n)` (linear)
