@@ -27,8 +27,6 @@ DEPENDENCIES := $(sort $(APP_OBJECTS:.o=.d) $(TEST_OBJECTS:.o=.d))
 CLI_TEST := $(TEST_DIR)/cli_tests.sh
 EXPERIMENT_RUNNER := $(SCRIPT_DIR)/run_experiments.sh
 
-# Respect an explicitly selected compiler while preferring the platform C++
-# driver over GNU make's historical g++ default.
 ifeq ($(origin CXX),default)
 CXX := c++
 endif
