@@ -278,8 +278,7 @@ CloudTiming calculate_cloud_timing(const Task& task, Time start,
 }
 
 template <typename Predecessors>
-void place_cloud(Task& task, std::size_t k, Time start,
-                 const std::vector<Task>& tasks, const Predecessors& predecessors) {
+void place_cloud(Task& task, std::size_t k, Time start, const std::vector<Task>& tasks, const Predecessors& predecessors) {
     const CloudTiming timing = calculate_cloud_timing(task, start, tasks, predecessors);
     task.assignment = static_cast<int>(k);
     task.is_core_task = false;
@@ -316,8 +315,7 @@ void insert_interval(std::vector<Interval>& calendar, Interval interval) {
     calendar.insert(position, interval);
 }
 
-void primary_assignment_impl(std::vector<Task>& tasks, const Graph& graph,
-                             bool cloud_enabled) {
+void primary_assignment_impl(std::vector<Task>& tasks, const Graph& graph, bool cloud_enabled) {
     for (auto& task : tasks) {
         reset_timing(task);
         const Time remote = add(
@@ -350,8 +348,7 @@ void task_prioritizing_impl(std::vector<Task>& tasks, const Graph& graph) {
 
 // Initial scheduling
 
-Sequences select_units(std::vector<Task>& tasks, const Graph& graph, bool cloud_enabled,
-                       bool fixed) {
+Sequences select_units(std::vector<Task>& tasks, const Graph& graph, bool cloud_enabled, bool fixed) {
     std::vector<std::vector<Interval>> calendars(graph.k + 1);
     std::vector<std::size_t> remaining(tasks.size());
 
@@ -458,15 +455,13 @@ Sequences select_units(std::vector<Task>& tasks, const Graph& graph, bool cloud_
     return result;
 }
 
-Sequences initial_schedule_impl(std::vector<Task>& tasks, const Graph& graph,
-                                bool cloud_enabled) {
+Sequences initial_schedule_impl(std::vector<Task>& tasks, const Graph& graph, bool cloud_enabled) {
     primary_assignment_impl(tasks, graph, cloud_enabled);
     task_prioritizing_impl(tasks, graph);
     return select_units(tasks, graph, cloud_enabled, false);
 }
 
-void check_sequences(const std::vector<Task>& tasks, const Graph& graph,
-                     const Sequences& sequences) {
+void check_sequences(const std::vector<Task>& tasks, const Graph& graph, const Sequences& sequences) {
     if (sequences.size() != graph.k + 1) {
         throw InvalidSequence("Expected K local sequences plus one upload sequence");
     }
@@ -491,8 +486,7 @@ void check_sequences(const std::vector<Task>& tasks, const Graph& graph,
     }
 }
 
-void check_chronological_schedule(const std::vector<Task>& tasks, const Graph& graph,
-                                  const Sequences& sequences) {
+void check_chronological_schedule(const std::vector<Task>& tasks, const Graph& graph, const Sequences& sequences) {
     for (std::size_t resource = 0; resource < sequences.size(); ++resource) {
         Time previous_finish = 0;
         for (const int id : sequences[resource]) {
@@ -510,9 +504,7 @@ void check_chronological_schedule(const std::vector<Task>& tasks, const Graph& g
     }
 }
 
-Sequences construct_sequence_impl(std::vector<Task>& tasks, std::size_t task_index,
-                                  std::size_t destination, Sequences sequences,
-                                  const Graph& graph) {
+Sequences construct_sequence_impl(std::vector<Task>& tasks, std::size_t task_index, std::size_t destination, Sequences sequences, const Graph& graph) {
     auto& task = tasks[task_index];
     if (static_cast<std::size_t>(task.assignment) == destination) {
         return sequences;
@@ -774,15 +766,12 @@ std::vector<double> default_core_powers(std::size_t count) {
     return result;
 }
 
-double calculate_energy_consumption(const Task& task,
-                                    const std::vector<double>& powers,
-                                    double sending_power) {
+double calculate_energy_consumption(const Task& task, const std::vector<double>& powers, double sending_power) {
     check_energy(task.core_execution_times.size(), powers, sending_power);
     return energy_value(task, powers, sending_power);
 }
 
-double total_energy(const std::vector<Task>& tasks, const std::vector<double>& powers,
-                    double sending_power) {
+double total_energy(const std::vector<Task>& tasks, const std::vector<double>& powers, double sending_power) {
     const std::size_t cores =
         tasks.empty() ? powers.size() : tasks.front().core_execution_times.size();
     check_energy(cores, powers, sending_power);
@@ -823,8 +812,7 @@ Sequences initial_schedule(std::vector<Task>& tasks, bool cloud_enabled) {
     return initial_schedule_impl(tasks, graph, cloud_enabled);
 }
 
-Sequences fixed_assignment_schedule(std::vector<Task>& tasks,
-                                    const std::vector<int>& assignments) {
+Sequences fixed_assignment_schedule(std::vector<Task>& tasks, const std::vector<int>& assignments) {
     const Graph graph(tasks);
     if (assignments.size() != tasks.size()) {
         throw std::invalid_argument("Expected one fixed assignment per task");
@@ -844,8 +832,7 @@ Sequences fixed_assignment_schedule(std::vector<Task>& tasks,
 
 // Migration and incremental rescheduling
 
-Sequences construct_sequence(std::vector<Task>& tasks, int task_id, int destination,
-                             Sequences sequences) {
+Sequences construct_sequence(std::vector<Task>& tasks, int task_id, int destination, Sequences sequences) {
     Graph graph(tasks, false);
     check_sequences(tasks, graph, sequences);
     if (destination < 0 || static_cast<std::size_t>(destination) > graph.k ||
@@ -970,10 +957,8 @@ std::pair<std::vector<Task>, Sequences> optimize_task_scheduling(
             break;
         }
 
-        sequences = construct_sequence_impl(tasks, best_task, best_destination,
-                                            std::move(sequences), graph);
-        kernel_algorithm_impl(tasks, sequences, graph, nullptr, false,
-                              &kernel_workspace);
+        sequences = construct_sequence_impl(tasks, best_task, best_destination, std::move(sequences), graph);
+        kernel_algorithm_impl(tasks, sequences, graph, nullptr, false, &kernel_workspace);
         if (!(total_energy(tasks, powers, sending_power) < current_energy) ||
             exceeds(total_time(tasks), deadline)) {
             throw std::logic_error("Accepted migration failed energy/deadline invariant");
@@ -986,8 +971,7 @@ std::pair<std::vector<Task>, Sequences> optimize_task_scheduling(
     }
     return {std::move(tasks), std::move(sequences)};
 }
-ScheduleResult schedule_application(std::vector<Task> tasks, Time deadline,
-                                    EnergyModel energy, bool cloud_enabled) {
+ScheduleResult schedule_application(std::vector<Task> tasks, Time deadline, EnergyModel energy, bool cloud_enabled) {
     check_deadline(deadline);
     const Graph graph(tasks);
     const std::size_t k = graph.k;
@@ -1170,8 +1154,7 @@ std::tuple<bool, std::vector<std::string>> validate_schedule_constraints(
 // Reporting
 
 void print_schedule_tasks(const std::vector<Task>& tasks) {
-    std::cout << "Task  Resource  Start  Local finish  Upload finish  "
-                 "Cloud start/finish  Return start/finish\n";
+    std::cout << "Task  Resource  Start  Local finish  Upload finish  Cloud start/finish  Return start/finish\n";
     for (const auto& task : tasks) {
         const std::size_t k = task.core_execution_times.size();
         const std::string resource =
@@ -1187,9 +1170,7 @@ void print_schedule_tasks(const std::vector<Task>& tasks) {
 
 void print_schedule_sequences(const Sequences& sequences) {
     for (std::size_t resource = 0; resource < sequences.size(); ++resource) {
-        const std::string name = resource + 1 == sequences.size()
-                                     ? "Upload"
-                                     : "Core " + std::to_string(resource + 1);
+        const std::string name = resource + 1 == sequences.size() ? "Upload" : "Core " + std::to_string(resource + 1);
         std::cout << name << ':';
         for (const int id : sequences[resource]) {
             std::cout << ' ' << id;
