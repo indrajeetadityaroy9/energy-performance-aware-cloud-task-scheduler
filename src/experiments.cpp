@@ -97,7 +97,7 @@ bool improves_baseline(const BaselineResult& result, bool feasible, double energ
     return !result.feasible && (result.tasks.empty() || time < best_time);
 }
 
-}  // namespace
+}
 
 // Section IV task-graph generation
 
@@ -148,12 +148,9 @@ std::vector<Task> generate_task_graph(const GeneratorConfig& config) {
     return graph;
 }
 
-// Baseline 1: random fixed assignments -------------------------------------
+// Baseline 1: random fixed assignments
 
-BaselineResult random_assignment_baseline(const std::vector<Task>& graph,
-                                          Time deadline, EnergyModel energy,
-                                          std::size_t trials,
-                                          std::uint64_t seed) {
+BaselineResult random_assignment_baseline(const std::vector<Task>& graph, Time deadline, EnergyModel energy, std::size_t trials, std::uint64_t seed) {
     validate_task_graph(graph);
     const std::size_t cores = core_count(graph);
     if (cores > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
@@ -166,8 +163,7 @@ BaselineResult random_assignment_baseline(const std::vector<Task>& graph,
     energy = validated_energy_model(std::move(energy), cores);
 
     std::mt19937_64 random(seed);
-    std::uniform_int_distribution<int> select_assignment(0,
-                                                         static_cast<int>(cores));
+    std::uniform_int_distribution<int> select_assignment(0, static_cast<int>(cores));
 
     BaselineResult result;
     double best_energy = std::numeric_limits<double>::infinity();
