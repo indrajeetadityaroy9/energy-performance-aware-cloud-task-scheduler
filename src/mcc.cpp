@@ -842,7 +842,7 @@ Sequences fixed_assignment_schedule(std::vector<Task>& tasks,
     return select_units(tasks, graph, true, true);
 }
 
-// Migration and incremental rescheduling ------------------------------------
+// Migration and incremental rescheduling
 
 Sequences construct_sequence(std::vector<Task>& tasks, int task_id, int destination,
                              Sequences sequences) {
@@ -1167,7 +1167,7 @@ std::tuple<bool, std::vector<std::string>> validate_schedule_constraints(
     return {errors.empty(), errors};
 }
 
-// Human-readable reporting
+// Reporting
 
 void print_schedule_tasks(const std::vector<Task>& tasks) {
     std::cout << "Task  Resource  Start  Local finish  Upload finish  "
